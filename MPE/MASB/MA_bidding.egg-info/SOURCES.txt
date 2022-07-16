@@ -1,0 +1,8 @@
+README.md
+setup.py
+MA_bidding.egg-info/PKG-INFO
+MA_bidding.egg-info/SOURCES.txt
+MA_bidding.egg-info/dependency_links.txt
+MA_bidding.egg-info/not-zip-safe
+MA_bidding.egg-info/requires.txt
+MA_bidding.egg-info/top_level.txt

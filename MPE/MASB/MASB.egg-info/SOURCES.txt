@@ -1,0 +1,8 @@
+README.md
+setup.py
+MASB.egg-info/PKG-INFO
+MASB.egg-info/SOURCES.txt
+MASB.egg-info/dependency_links.txt
+MASB.egg-info/not-zip-safe
+MASB.egg-info/requires.txt
+MASB.egg-info/top_level.txt
