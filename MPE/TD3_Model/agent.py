@@ -1,17 +1,18 @@
 import torch
 import copy
 import torch.nn.functional as F
-from TD3_Model.networks import Actor, Critic
-from TD3_Model.memory import ReplayBuffer
+from MPE.TD3_Model.networks import Actor, Critic
+from MPE.TD3_Model.memory import ReplayBuffer
 from infoAlg import GaussDistribution
+import os
 
 
 class Agent(object):
     def __init__(self, state_dim, action_dim, max_action, high, low, cfg, agent_idx,
-                 chkpt_dir='D:\BCIM\MABCIM\MPE\MASB\MASB\env'):
+                 chkpt_dir='/MPE/MASB/MASB/env/'):
         self.name = 'TD3_agent%s' % agent_idx
         self.n_actions = cfg.n_actions
-        self.path = chkpt_dir
+        self.path = os.getcwd() + chkpt_dir
         self.max_action = max_action
         self.gamma = cfg.gamma
         self.lr = cfg.lr
@@ -43,6 +44,7 @@ class Agent(object):
         action = self.actor(state)
         action = action.detach().numpy()[0]
         actions = self.reAction.get_action(action)
+        # actions = action.cpu().data.numpy().flatten()
         return actions
 
     def learn(self):

@@ -1,21 +1,22 @@
 import numpy as np
 
-from MADDPG_Model import MADDPGConfig
-from MADDPG_Model.maddpg import MADDPG_master as MADDPG
-from MADDPG_Model.memory import MultiAgentReplayBuffer
-from MASB.make_env import make_env
+from MPE.MADDPG_Model import MADDPGConfig
+from MPE.MADDPG_Model.maddpg import MADDPG_master as MADDPG
+from MPE.MADDPG_Model.memory import MultiAgentReplayBuffer
+from MPE.MASB.make_env import make_env
 import dataAnalysis
 import time
 from StageOne import utils
 from StageOne.utils import obs_list_to_state_vector
-from infoAlg import SeedsInfo
 
 
-def MADDPG_test(date, is_evaluate, text_):
+def MADDPG_test(seedsIno, date, is_evaluate, text_):
     cfg = MADDPGConfig()
-    resCfg0 = SeedsInfo()
+    resCfg0 = seedsIno
     startTime = time.time()
-    env = make_env(cfg.env)
+    print("MCBIM number:" + date + " k=" + str(resCfg0.num_agents) + " |S|=" + str(resCfg0.num_seeds) + " episodes=" +
+          str(resCfg0.N_GAMES * resCfg0.MAX_STEPS) + " start")
+    env = make_env(cfg.env, resCfg0)
     n_agents = env.num_agents
     actor_dims = []
     for i in range(n_agents):
@@ -31,19 +32,17 @@ def MADDPG_test(date, is_evaluate, text_):
     total_steps = 0
     evaluate = is_evaluate
     best_reward = 0
-
-    budget = utils.budgetGet(env)
+    is_load = False
 
     if evaluate:
         maddpg_agents.load_checkpoint()
 
-    for i in range(cfg.N_GAMES):
+    for i in range(resCfg0.N_GAMES):
         obs = env.reset()
         score = []
         success_reward = []
         done = [False] * n_agents
         episode_step = 0
-        cgcs = 0
         while not any(done):
             actions = maddpg_agents.choose_action(obs)
             obs_, reward, done, info = env.step(actions)
@@ -53,12 +52,14 @@ def MADDPG_test(date, is_evaluate, text_):
             is_success = []
             for seed in env.landmarks:
                 is_success.append(seed.is_success)
-            if episode_step >= cfg.MAX_STEPS:
+            if episode_step >= resCfg0.MAX_STEPS:
                 done = [True] * n_agents
-            if not evaluate and total_steps % cfg.l_step == 0:
+            if not evaluate and total_steps % resCfg0.maddpg_l_step == 0:
                 maddpg_agents.learn(memory)
-            if all(is_success) and utils.rewardLimit(reward, budget):
-                cgcs += 1
+
+            cost = utils.costGet(env)
+            if utils.GEI(reward, cost):
+                is_load = True
                 success_reward.append(sum(reward))
                 seeds = utils.initialCostGet(env)
                 budget_left = utils.budgetLeftGet(env)
@@ -80,16 +81,22 @@ def MADDPG_test(date, is_evaluate, text_):
             episode_step += 1
             env.trainReset()
 
+        # socre存储的是所有episodes的平台方收益
         if score:
             resCfg0.rewardPlatform.append(np.mean(score))
+            resCfg0.score.extend(score)
         else:
             resCfg0.rewardPlatform.append(0.0)
         if success_reward:
-            resCfg0.successReward.append(np.mean(success_reward))
-        else:
-            resCfg0.successReward.append(0.0)
+            resCfg0.successReward.extend(success_reward)
     endTime = time.time()
-    print("MADDPG：")
-    print(int(endTime - startTime))
+    # output running time
+    print("MCBIM number:" + date + " k=" + str(resCfg0.num_agents) + " |S|=" + str(resCfg0.num_seeds) + " episodes=" +
+          str(resCfg0.N_GAMES * resCfg0.MAX_STEPS) + " end")
+    print("Time consuming: " + str(endTime - startTime))
+    print("-------------------------------------")
+    # results writing
     dataAnalysis.datawrite(0, date, text_, resCfg0.rewardPlatform, resCfg0.rewardAgent, resCfg0.successReward, resCfg0.seedsPrice,
-                           resCfg0.agentBudleft, resCfg0.successSeeds)
+                           resCfg0.agentBudleft, resCfg0.successSeeds, resCfg0.score)
+
+    return is_load

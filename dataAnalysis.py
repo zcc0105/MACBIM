@@ -6,6 +6,7 @@ import numpy as np
 from scipy import stats
 from scipy.stats import norm
 from infoAlg import SeedsInfo
+from scipy.signal import savgol_filter
 
 
 from StageOne import utils
@@ -37,11 +38,13 @@ def dataMLE(data):
     return round(x1, 2)
 
 
-def datawrite(m, date, text_, rewardPlatform, rewardAgents, successReward, successPrices, budgetLefts, successSeeds):
+def datawrite(m, date, text_, rewardPlatform, rewardAgents, successReward, successPrices, budgetLefts, successSeeds, score):
     filename1 = 'M' + str(m) + '_platform_reward' + str(date) + '_' + str(text_) + '.txt'
     filename2 = 'M' + str(m) + '_ave_successBid_reward' + str(date) + '_' + str(text_) + '.txt'
+    filename3 = 'M' + str(m) + '_episodes_platform_reward' + str(date) + '_' +str(text_) + '.txt'
     dataStore(filename1, rewardPlatform, 'reward of platform')
     dataStore(filename2, successReward, 'reward of successful bidding reward')
+    dataStore(filename3, score, 'platform reward of all episodes')
     for i in range(len(rewardAgents)):
         filename = 'M' + str(m) + '_agent' + str(i+1) + '_reward' + str(date) + '_' + str(text_) + '.txt'
         dataStore(filename, rewardAgents[i], 'reward of agent')
@@ -59,6 +62,8 @@ def dataStore(filename, data, key):
     t = ''
     storeFname = './ModelsRes/' + filename
     with open(storeFname, 'w') as f:
+        f.seek(0)
+        f.truncate()
         f.write('# start to write %s\n' % key)
         for item in data:
             t = t + str(item)
@@ -410,15 +415,14 @@ def resRe(m, name, TN, budSum, numAgents):
     for i in range(len(M_ABL[0])):
         sum_ = 0
         for j in range(numAgents):
-            sum_ += M_ABL[j][i]
+            sum_ = sum_ + M_ABL[j][i]
         if sum_ / budSum <= 0.35:
-            times += 1
+            times = times + 1
     print(times/TN)
 
 
 # 读取实验结果txt文件，并返回
-def resGet(m, date, text_, numAgents, numSeeds):
-    cfg = SeedsInfo()
+def resGet(m, date, text_, numAgents, numSeeds, cfg):
     is_print = True
     is_plot = False
     is_ksTest = True
@@ -426,7 +430,7 @@ def resGet(m, date, text_, numAgents, numSeeds):
              3: 'PPO', 4: 'DDQN', 5:'TD3', 6:'SAC'}
     name1 = 'M'+str(m)+'_platform_reward'+str(date)+'_'+str(text_)+'.txt'
     M_RA = {}       # 存储竞争者的收益
-    M_ABL = {}      # 存储竞争者的剩余收益
+    M_ABL = {}      # 存储竞争者的剩余预算
     avg_RA = {}
     for i in range(numAgents):
         filename1 = 'M'+str(m)+'_agent' + str(i+1) + '_reward'+str(date)+'_'+str(text_)+'.txt'
@@ -453,21 +457,21 @@ def resGet(m, date, text_, numAgents, numSeeds):
         seedsScatterDiagram(M_SB, model[m])
         agentRewardLineCharts(M_RP, M_SR, M_RA, model[m])
     if is_print:
-        print(str(len(M_SB[0])/(cfg.MAX_STEPS*cfg.N_GAMES/100)))
-        print(str(avg_RP))
-        for i in range(numAgents):
+        print(str(len(M_SB[0])/(cfg.MAX_STEPS*cfg.N_GAMES/100)))       # 输出满足限制条件的episodes占所有episodes的比例
+        print(str(avg_RP))                                             # N 次竞价里面每一次的平台方利益均值
+        for i in range(numAgents):                                     # 输出满足限制条件的episodes中每个智能体的收益
             print(str(avg_RA[i+1]))
-        print(str(avg_SR))
-        for i in range(numAgents):
+        print(str(avg_SR))                                             # 输出满足限制条件的episodes的平台方收益均值
+        for i in range(numAgents):                                     # 输出满足限制条件的episodes的每个智能体的平均花费比
             print(str(round(cost_RA[i+1]*100, 2)))
-        for i in range(len(M_resRate)):     # 输出公平率
+        for i in range(len(M_resRate)):     # 输出公平率                 # 输出满足限制条件的episodes时，对于每个智能体的公平比
             print(str(round(M_resRate[i]*100, 1)))
         print('---------------------------')
     if avg_RA[1] == 0 or len(M_SB[0]) == 1:
         is_ksTest = False
     if is_ksTest:
         seedsKsTest(M_SB, model[m])
-    return M_RP, M_RA, M_SR
+    return M_RP, M_RA, M_SR              # 这里的 is_ksTest 是为了检查后面模型有没有load checkpoint的必要
 
 
 # 种子起拍价处理
@@ -503,6 +507,26 @@ def seedPriceProcess(M_SB0, M_SB1, M_SB2, M_SB3, M_SB4):
     collections_SB4 = Counter(M_SB4_arr)
     argmax_SB4 = collections_SB4.most_common(1)
 
+
+def episodesPlatformRewards(date, text_):
+    model = [0, 1, 3, 6]
+    colorModel = ['red', 'blue', 'green','orange']
+    allPlatformReward = {}
+    for i in range(len(model)):
+        filename = 'M' + str(model[i]) + '_episodes_platform_reward' + str(date) + '_' +str(text_) + '.txt'
+        allPlatformReward[i] = dataRead(filename)
+        ydata = savgol_filter(allPlatformReward[i], 65, 1, mode='nearest')
+        plt.plot(ydata, linewidth=2, linestyle='-', color=colorModel[i])
+    plt.legend(['MCBIM', 'DDPG', 'PPO', 'SAC'])
+    plt.title('Platform reward of all episodes', fontsize=16)
+    plt.xlabel('Episodes', fontsize=10)
+    plt.ylabel('Platform reward', fontsize=10)
+    plt.tick_params(axis='both', labelsize=10)
+    plt.show()
+
+
+if __name__ == '__main__':
+    episodesPlatformRewards(701, 't')
 
 
 

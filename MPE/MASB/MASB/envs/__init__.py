@@ -1,4 +1,4 @@
-from MASB.MASB.envs.simple_bidding import SimBid
+from MPE.MASB.MASB.envs.simple_bidding import SimBid
 import imp
 import os.path as osp
 

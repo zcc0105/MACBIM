@@ -6,9 +6,9 @@ import os
 
 class Actor(nn.Module):
     def __init__(self, state_dim, action_dim, hidden_dim, name,
-                 chkpt_dir='D:\BCIM\MABCIM\MPE\MASB\MASB\env'):
+                 chkpt_dir='/MPE/MASB/MASB/env/'):
         super(Actor, self).__init__()
-        self.chkpt_file = os.path.join(chkpt_dir, name)
+        self.chkpt_file = os.getcwd() + chkpt_dir + name
         self.actor = nn.Sequential(
                 nn.Linear(state_dim, hidden_dim),
                 nn.ReLU(),
@@ -32,9 +32,9 @@ class Actor(nn.Module):
 
 class Critic(nn.Module):
     def __init__(self, state_dim, hidden_dim, name,
-                 chkpt_dir='D:\BCIM\MABCIM\MPE\MASB\MASB\env'):
+                 chkpt_dir='/MPE/MASB/MASB/env/'):
         super(Critic, self).__init__()
-        self.chkpt_file = os.path.join(chkpt_dir, name)
+        self.chkpt_file = os.getcwd() + chkpt_dir + name
         self.critic = nn.Sequential(
                 nn.Linear(state_dim, hidden_dim),
                 nn.ReLU(),

@@ -2,13 +2,13 @@ import numpy as np
 import torch as T
 import torch.optim as optim
 
-from PPO_Model.networks import Actor, Critic
-from PPO_Model.memory import PPOMemory
+from MPE.PPO_Model.networks import Actor, Critic
+from MPE.PPO_Model.memory import PPOMemory
 from infoAlg import GaussDistribution
 
 
 class Agent:
-    def __init__(self, state_dim, action_dim, cfg, agent_idx, high, low):
+    def __init__(self, state_dim, cfg, agent_idx, high, low):
         self.gamma = cfg.gamma
         self.policy_clip = cfg.policy_clip
         self.n_epochs = cfg.n_epochs
@@ -24,18 +24,19 @@ class Agent:
         self.critic_optimizer = optim.Adam(self.critic.parameters(), lr=cfg.critic_lr)
         self.memory = PPOMemory(cfg.batch_size)
         self.loss = 0
+
         self.reAction = GaussDistribution(high=self.high, low=self.low)
 
     def choose_action(self, observation):
         state = T.tensor([observation], dtype=T.float).to(self.device)
         dist, dist_ = self.actor(state)
         value = self.critic(state)
+        value = T.squeeze(value).item()
         action = dist.sample()
         probs = T.squeeze(dist.log_prob(action)).item()
         action = T.squeeze(action).item()
         reaction = dist_[0][action].detach().numpy()
         actions = [self.reAction.get_action([reaction])[0] for _ in range(self.n_actions)]
-        value = T.squeeze(value).item()
         return action, actions, probs, value
 
     def learn(self):

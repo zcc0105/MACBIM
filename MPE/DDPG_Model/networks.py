@@ -7,10 +7,10 @@ import os
 
 class Critic(nn.Module):
     def __init__(self, n_obs, output_dim, layer1, layer2, name, init_w=3e-3,
-                 chkpt_file='D:\BCIM\MABCIM\MPE\MASB\MASB\env'):
+                 chkpt_file='/MPE/MASB/MASB/env/'):
         super(Critic, self).__init__()
-        
-        self.chkpt_file = os.path.join(chkpt_file, name)
+
+        self.chkpt_file = os.getcwd() + chkpt_file + name
         self.linear1 = nn.Linear(n_obs + output_dim, layer1)
         self.linear2 = nn.Linear(layer1, layer2)
         self.linear3 = nn.Linear(layer2, output_dim)
@@ -33,10 +33,10 @@ class Critic(nn.Module):
 
 class Actor(nn.Module):
     def __init__(self, n_obs, output_dim, layer1, layer2, name, init_w=3e-3,
-                 chkpt_file='D:\BCIM\MABCIM\MPE\MASB\MASB\env'):
+                 chkpt_file='/MPE/MASB/MASB/env/'):
         super(Actor, self).__init__()
         
-        self.chkpt_file = os.path.join(chkpt_file, name)
+        self.chkpt_file = os.getcwd() + chkpt_file + name
         self.linear1 = nn.Linear(n_obs, layer1)
         self.linear2 = nn.Linear(layer1, layer2)
         self.linear3 = nn.Linear(layer2, output_dim)

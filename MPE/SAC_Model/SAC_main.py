@@ -1,19 +1,20 @@
 import numpy as np
 
-from SAC_Model import SACConfig
-from SAC_Model.SAC import SAC
-from MASB.make_env import make_env
+from MPE.SAC_Model import SACConfig
+from MPE.SAC_Model.SAC import SAC
+from MPE.MASB.make_env import make_env
 import dataAnalysis
 import time
 from StageOne import utils
-from infoAlg import SeedsInfo
 
 
-def SAC_test(date, is_evaluate, text_):
+def SAC_test(seedsIno, date, is_evaluate, text_):
     cfg = SACConfig()
-    resCfg6 = SeedsInfo()
+    resCfg6 = seedsIno
     startTime = time.time()
-    env = make_env(cfg.env)
+    print("SAC编号为" + date + "k=" + str(resCfg6.num_agents) + "|S|=" + str(resCfg6.num_seeds) + "episodes=" +
+          str(resCfg6.N_GAMES * resCfg6.MAX_STEPS) + "实验开始")
+    env = make_env(cfg.env, resCfg6)
     n_agents = env.num_agents
     actor_dims = []
     for i in range(n_agents):
@@ -25,20 +26,19 @@ def SAC_test(date, is_evaluate, text_):
     total_steps = 0
     evaluate = is_evaluate
     best_reward = 0
+    is_load = False
 
     budget = utils.budgetGet(env)
 
     if evaluate:
         SAC_agents.load_checkpoint()
 
-    for i in range(cfg.N_GAMES):
+    for i in range(resCfg6.N_GAMES):
         obs = env.reset()
         score = []
         success_reward = []
         done = [False] * n_agents
         episode_step = 0
-        if i % cfg.p_step == 0:
-            print("第%d轮:" % i)
         while not any(done):
             actions = SAC_agents.choose_action(obs)
             obs_, reward, done, info = env.step(actions)
@@ -46,11 +46,14 @@ def SAC_test(date, is_evaluate, text_):
             is_success = []
             for seed in env.landmarks:
                 is_success.append(seed.is_success)
-            if episode_step >= cfg.MAX_STEPS:  # MAX_STEPS = 50
+            if episode_step >= resCfg6.MAX_STEPS:  # MAX_STEPS = 50
                 done = [True] * n_agents
             if not evaluate and total_steps % cfg.l_step == 0:
                 SAC_agents.learn()
-            if all(is_success) and utils.rewardLimit(reward, budget):
+
+            cost = utils.costGet(env)
+            if utils.GEI(reward, cost):
+                is_load = True
                 success_reward.append(sum(reward))
                 seeds = utils.initialCostGet(env)
                 budget_left = utils.budgetLeftGet(env)
@@ -74,6 +77,7 @@ def SAC_test(date, is_evaluate, text_):
 
         if score:
             resCfg6.rewardPlatform.append(np.mean(score))
+            resCfg6.score.extend(score)
         else:
             resCfg6.rewardPlatform.append(0.0)
         if success_reward:
@@ -82,7 +86,10 @@ def SAC_test(date, is_evaluate, text_):
             resCfg6.successReward.append(0.0)
 
     endTime = time.time()
-    print("SAC:")
-    print(int(endTime - startTime))
+    print("SAC编号为" + date + "k=" + str(resCfg6.num_agents) + "|S|=" + str(resCfg6.num_seeds) + "episodes=" +
+          str(resCfg6.N_GAMES * resCfg6.MAX_STEPS) + "实验结束")
+    print("该实验耗时" + str(endTime - startTime))
+    print("-------------------------------------")
     dataAnalysis.datawrite(6, date, text_, resCfg6.rewardPlatform, resCfg6.rewardAgent, resCfg6.successReward, resCfg6.seedsPrice,
-                           resCfg6.agentBudleft, resCfg6.successSeeds)
+                           resCfg6.agentBudleft, resCfg6.successSeeds, resCfg6.score)
+    return is_load

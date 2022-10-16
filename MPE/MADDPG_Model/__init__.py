@@ -5,7 +5,7 @@ class MADDPGConfig(SeedsInfo):
     def __init__(self) -> None:
         super().__init__()
         self.env = 'simple_bidding'
-        self.algo = 'MADDPG'
+        self.algo = 'MCBIM'
         self.batch_size = 1024
         self.gamma = 0.95
         self.tau = 0.01

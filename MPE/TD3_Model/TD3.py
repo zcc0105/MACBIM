@@ -1,4 +1,4 @@
-from TD3_Model.agent import Agent
+from MPE.TD3_Model.agent import Agent
 
 
 class TD3:

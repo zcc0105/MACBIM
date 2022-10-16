@@ -1,14 +1,14 @@
 import gym
 from gym import spaces
 import numpy as np
-from MASB.MASB.multi_discrete import MultiDiscrete
+from MPE.MASB.MASB.multi_discrete import MultiDiscrete
 
 class MultiAgentEnv(gym.Env):
     metadata = {
         'render.modes': ['human', 'rgb_array']
     }
 
-    def __init__(self, world, reset_callback=None, reward_callback=None, reward_callback2=None,
+    def __init__(self, world, reset_callback=None, reward_callback=None, reward_callback2 = None,
                  observation_callback=None, observation2_callback=None, info_callback=None,
                  done_callback=None):
 
@@ -44,7 +44,7 @@ class MultiAgentEnv(gym.Env):
         for agent in self.agents:
             total_action_space = []
             if not self.discrete_action_space:
-                agent_action_space = spaces.Box(low=0., high=agent.budget_left, shape=(int(self.num_landmarks/2),), dtype=np.float32)
+                agent_action_space = spaces.Box(low=0., high=agent.budget_left, shape=(int(self.num_landmarks),), dtype=np.float32)
                 total_action_space.append(agent_action_space)
             if len(total_action_space) > 1:
                 if all([isinstance(act_space, spaces.Discrete) for act_space in total_action_space]):
@@ -151,7 +151,7 @@ class MultiAgentEnv(gym.Env):
             return 0.0
         return self.reward_callback2(seeds, compSeeds, candSeeds)
 
-    def _set_action(self, action, agent, lan_i, is_rand=True):
+    def _set_action(self, action, agent, lan_i, is_rand=False):
         action_new = np.array(action, dtype=float)
         if not agent.isBid:
             return 0
@@ -256,8 +256,8 @@ class MultiAgentEnv(gym.Env):
             for i, agent in enumerate(world.agents):
                 if i == max_index:
                     agent.budget_left -= second_Price
-                    agent.seeds.append(landmark.data_index)     # 将竞价成功的节点加入到竞争者的种子集中
-                    # agent.reward = self._get_reward(agent)   # 获取竞争者新种子集的奖励
+                    agent.seeds.append(landmark.data_index)
+                    # agent.reward = self._get_reward(agent)
                     break
         return float(second_Price), result_Agent_Price
 

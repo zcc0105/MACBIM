@@ -1,20 +1,21 @@
-from SAC_Model.memory import ReplayBuffer
-from SAC_Model.networks import ValueNet, PolicyNet, SoftQNet
+from MPE.SAC_Model.memory import ReplayBuffer
+from MPE.SAC_Model.networks import ValueNet, PolicyNet, SoftQNet
 import copy
 import torch
 import torch.nn as nn
 import torch.optim as optim
 import numpy as np
+import os
 
 from infoAlg import GaussDistribution
 
 
 class Agent:
-    def __init__(self, state_dim, action_dim, high, low, cfg, agent_idx, path='D:\BCIM\MABCIM\MPE\MASB\MASB\env') -> None:
+    def __init__(self, state_dim, action_dim, high, low, cfg, agent_idx, path='/MPE/MASB/MASB/env/') -> None:
         self.batch_size = cfg.batch_size
         self.memory = ReplayBuffer(cfg.capacity)
         self.device = cfg.device
-        self.path = path
+        self.path = os.getcwd() + path
         self.high = high[agent_idx]
         self.low = low[agent_idx]
         self.name = 'SAC_%s' % agent_idx

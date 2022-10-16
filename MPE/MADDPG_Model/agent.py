@@ -1,5 +1,5 @@
 import torch as T
-from MADDPG_Model.networks import ActorNetwork, CriticNetwork
+from MPE.MADDPG_Model.networks import ActorNetwork, CriticNetwork
 from infoAlg import GaussDistribution
 
 class Agent:
@@ -28,7 +28,7 @@ class Agent:
     def choose_action(self, observation):
         state = T.tensor([observation], dtype=T.float).to(self.device)
         action = self.actor.forward(state)
-        actions = action.detach().numpy()[0]
+        actions = action.detach().cpu().numpy()[0]
         actions = self.reAction.get_action(actions)
         return actions
 

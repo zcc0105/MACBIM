@@ -78,10 +78,14 @@ def spreadDiGraph(graph, dataset_name):
 
 
 def seedsSelect():
-    Dataset = '../dataset/dblp_sub.txt'
+    Dataset = '../dataset/Cit-HepPh.txt'
     G1 = utils.parse_graph_txt_file(Dataset)
-    k = [5, 7, 9]
+    k = [200, 400]
     for item in k:
-        print(degree(G1, item))
+        seeds = degreeGraph(G1, item)
+        print(seeds)
 
+
+if __name__ == '__main__':
+    seedsSelect()
 

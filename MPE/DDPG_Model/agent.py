@@ -4,8 +4,8 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from infoAlg import GaussDistribution
-from DDPG_Model.networks import Actor, Critic
-from DDPG_Model.memory import ReplayBuffer
+from MPE.DDPG_Model.networks import Actor, Critic
+from MPE.DDPG_Model.memory import ReplayBuffer
 
 
 class Agent:
@@ -37,8 +37,9 @@ class Agent:
     def choose_action(self, state):
         state = torch.FloatTensor(state).unsqueeze(0).to(self.device)
         action = self.actor(state)
-        action = action[0].detach().numpy()
-        actions = self.reAction.get_action(action)
+        # action = action[0].detach().numpy()
+        # actions = self.reAction.get_action(action)
+        actions = action.detach().cpu().numpy()[0]
         return actions
 
     def learn(self):

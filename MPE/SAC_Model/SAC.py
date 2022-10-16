@@ -1,4 +1,4 @@
-from SAC_Model.agent import Agent
+from MPE.SAC_Model.agent import Agent
 
 
 class SAC:

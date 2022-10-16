@@ -1,4 +1,4 @@
-from DDPG_Model.agent import Agent
+from MPE.DDPG_Model.agent import Agent
 
 class DDPG(object):
     def __init__(self, cfg, env, state_dim, n_agents):

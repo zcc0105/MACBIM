@@ -1,5 +1,7 @@
 import copy
 import itertools
+
+import networkx as nx
 import numpy as np
 import time
 from StageOne import utils
@@ -120,7 +122,7 @@ def compDiffuse(G, seeds, compSeeds):
             for node in currentActiveCompSeeds:
                 for neighbor in G.neighbors(node):
                     if neighbor not in activeNodes:
-                        nodeValues2[neighbor] += weight(G, node, neighbor)
+                        nodeValues2[neighbor] = nodeValues2[neighbor] + weight(G, node, neighbor)
                         if nodeValues2[neighbor] >= nodeThreshold[neighbor]:
                             if neighbor not in unionNode:
                                 activate(G, neighbor, 2)
@@ -139,7 +141,7 @@ def compDiffuse(G, seeds, compSeeds):
             for node in currentActiveSeeds:
                 for neighbor in G.neighbors(node):
                     if neighbor not in activeNodes:
-                        nodeValues1[neighbor] += weight(G, node, neighbor)
+                        nodeValues1[neighbor] = nodeValues1[neighbor] + weight(G, node, neighbor)
                         if nodeValues1[neighbor] >= nodeThreshold[neighbor]:
                             if neighbor not in unionNode:
                                 activate(G, neighbor, 1)
@@ -185,6 +187,7 @@ def get_party(item, canInit):
     return seeds, compseeds, candseeds
 
 
+# 用CLT算法得到影响力，然后放在文件里面存储起来
 def rewardStore(G, candInit, dataset_name):
     seeds_num = len(candInit)
     res_record = {}
@@ -200,6 +203,7 @@ def rewardStore(G, candInit, dataset_name):
         f.close()
 
 
+#读取文件里面存储的CLT模型计算出来的影响力
 def rewardGet(dataset_name, seeds_num):
     state_store = []
     reward_store = []
@@ -222,7 +226,7 @@ def string_to_float(str):
 
 
 def spreardGet(G, seeds, compSeeds, candSeeds):
-    iterations = 10
+    iterations = 4
     spreadSeeds = np.zeros(iterations)
     spreadCompSeeds = np.zeros(iterations)
 
@@ -246,10 +250,41 @@ def reward_test():
     candInit = [[107, 1684, 1912, 3437, 0],
                 [107, 1684, 1912, 3437, 0, 2543, 2347],
                 [107, 1684, 1912, 3437, 0, 2543, 2347, 1888, 1800]]
-    dataset_name = ['facebook']
-    num_agents = 2
-    for item in candInit:
-        rewardStore(G, item, dataset_name, num_agents)
-    end_time = time.time()
-    print('Running time:{:.5f}'.format(end_time - start_time))
+    seeds = [107, 1684, 1912]
+    candSeeds = [3437, 0, 2543]
+    compSeeds = [2347]
+    neighbors_seeds = []
+    for v in seeds:
+        neighbor_u = []
+        for u in G.neighbors(v):
+            # 不包含candSeeds跟compSeeds
+            if u in candSeeds or u in compSeeds:
+                continue
+            neighbor_u.append(u)
+        neighbors_seeds.extend(neighbor_u)
 
+    neighbors_compseeds = []
+    for v in compSeeds:
+        neighbor_u = []
+        for u in G.neighbors(v):
+            # 不包含candSeeds跟compSeeds
+            if u in seeds or u in candSeeds:
+                continue
+            neighbor_u.append(u)
+        neighbors_compseeds.extend(neighbor_u)
+
+    same = list(set(neighbors_seeds) & set(neighbors_compseeds))
+    for i in same:
+        neighbors_seeds.remove(i)
+    print(len(neighbors_seeds))
+
+    # dataset_name = ['facebook']
+    # num_agents = 2
+    # for item in candInit:
+    #     rewardStore(G, item, dataset_name, num_agents)
+    # end_time = time.time()
+    # print('Running time:{:.5f}'.format(end_time - start_time))
+
+
+if __name__ == "__main__":
+    reward_test()

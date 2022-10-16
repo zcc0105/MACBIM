@@ -1,4 +1,4 @@
-from PPO_Model.agent import Agent
+from MPE.PPO_Model.agent import Agent
 
 
 class PPO:
@@ -7,7 +7,7 @@ class PPO:
         self.agents = []
         self.n_agents = n_agents
         for agent_idx in range(self.n_agents):
-            self.agents.append(Agent(state_dim[agent_idx], cfg.action_bound[agent_idx], cfg, agent_idx,
+            self.agents.append(Agent(state_dim[agent_idx], cfg, agent_idx,
                                      env.action_space[agent_idx].high, env.action_space[agent_idx].low))
 
     def choose_action(self, observation):
